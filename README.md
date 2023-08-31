@@ -19,40 +19,18 @@ To train a pix2pix network we need dataset which comes in a pair. So for each sa
 ### 1. Synthetic Airbubbles
 One idea is to introduce airbubbles artificially into a non airbubble sample to create a pair. The actual airbubble is somewhat circular and has a high contrast/bright boders with black pixels inside. I tried to mimic the same features to create the image pairs for training. 
 
-<div style="display: flex; justify-content: center;">
-  <div style="flex: 1; text-align: center;">
-    <figure style="display: inline-block;">
-      <img src="images/slices_wo_airbubble.png" alt="slices_wo_airbubble" style="width: 300px;">
-      <figcaption>slices without airbubble</figcaption>
-    </figure>
-  </div>
-  <div style="flex: 1; text-align: center;">
-    <figure style="display: inline-block;">
-      <img src="images/slices_w_airbubble.png" alt="slices_w_airbubble" style="width: 300px;">
-      <figcaption>same slices with artificially introduced airbubbles</figcaption>
-    </figure>
-  </div>
-</div>
+| ![Image 1](images/slices_wo_airbubble.png) | ![Image 2](images/slices_w_airbubble.png) |
+|:---:|:---:|
+| slices without airbubble | same slices with artificially introduced airbubbles |
 
 
 ### 2. Copy actual airbubble
 Another idea is to identify the airbubbles in the sample and extract the airbubble and put it on a sample without airbubble to create a pair for training. 
 
 
-<div style="display: flex; justify-content: center;">
-  <div style="flex: 1; text-align: center;">
-    <figure style="display: inline-block;">
-      <img src="images/slices_w_real_airbubble.png" alt="slices_w_real_airbubble" style="width: 300px;">
-      <figcaption>slices with real airbubble</figcaption>
-    </figure>
-  </div>
-  <div style="flex: 1; text-align: center;">
-    <figure style="display: inline-block;">
-      <img src="images/slices_w_real_airbubble_copied.png" alt="slices_w_real_airbubble_copied" style="width: 300px;">
-      <figcaption>real airbubbles transfered to non airbubble sample</figcaption>
-    </figure>
-  </div>
-</div>
+| ![Image 1](images/slices_w_real_airbubble.png) | ![Image 2](images/slices_w_real_airbubble_copied.png) |
+|:---:|:---:|
+| slices with real airbubble | real airbubbles transfered to non airbubble sample |
 
 
 ## Training a pix2pix
