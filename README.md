@@ -4,10 +4,12 @@ Generative Adversarial Networks - GANs for the compensation of airbubbles in the
 ## Air Bubbles
 The classical process of preparing a Formalin Fixed Paraffin Embedded (FFPE) blocks for histoloy introduces airbubbles inside the sample. Although it causes no problem for classical histology staining slides, but for micro-ct scans in propagation based imaging in synchrotron source airbubbles is very problamatic. As we use the standard FFPE blocks for micro-CT scans these airbubbles creates problem for rendering and further data analysis. 
 
-<figure align="center">
+<p align="center">
     <img src="images/example_sample_with_airbubble.png" alt="example_sample_with_airbubble">
-    <figcaption>A part of a slice of a sample scan with airbubbles inside</figcaption>
-</figure>
+</p>
+<p align="center">
+  A part of a slice of a sample scan with airbubbles inside
+</p>
 
 
 ## Pix2Pix to remove airbubbles
@@ -34,3 +36,6 @@ Another idea is to identify the airbubbles in the sample and extract the airbubb
 
 
 ## Training a pix2pix
+| ![Image 1](images/example_sample_with_airbubble.png) |
+|:---:|
+| slices with real airbubble |
