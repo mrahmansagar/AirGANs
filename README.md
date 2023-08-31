@@ -36,6 +36,3 @@ Another idea is to identify the airbubbles in the sample and extract the airbubb
 
 
 ## Training a pix2pix
-| ![Image 1](images/example_sample_with_airbubble.png) |
-|:---:|
-| slices with real airbubble |
