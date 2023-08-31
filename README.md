@@ -22,13 +22,13 @@ One idea is to introduce airbubbles artificially into a non airbubble sample to 
 <div style="display: flex; justify-content: center;">
   <div style="flex: 1; text-align: center;">
     <figure style="display: inline-block;">
-      <img src="images/slices_wo_airbubble.png" alt="slices_wo_airbubble" >
+      <img src="images/slices_wo_airbubble.png" alt="slices_wo_airbubble" style="width: 300px;">
       <figcaption>slices without airbubble</figcaption>
     </figure>
   </div>
   <div style="flex: 1; text-align: center;">
     <figure style="display: inline-block;">
-      <img src="images/slices_w_airbubble.png" alt="slices_w_airbubble" >
+      <img src="images/slices_w_airbubble.png" alt="slices_w_airbubble" style="width: 300px;">
       <figcaption>same slices with artificially introduced airbubbles</figcaption>
     </figure>
   </div>
@@ -42,13 +42,13 @@ Another idea is to identify the airbubbles in the sample and extract the airbubb
 <div style="display: flex; justify-content: center;">
   <div style="flex: 1; text-align: center;">
     <figure style="display: inline-block;">
-      <img src="images/slices_w_real_airbubble.png" alt="slices_w_real_airbubble">
+      <img src="images/slices_w_real_airbubble.png" alt="slices_w_real_airbubble" style="width: 300px;">
       <figcaption>slices with real airbubble</figcaption>
     </figure>
   </div>
   <div style="flex: 1; text-align: center;">
     <figure style="display: inline-block;">
-      <img src="images/slices_w_real_airbubble_copied.png" alt="slices_w_real_airbubble_copied" >
+      <img src="images/slices_w_real_airbubble_copied.png" alt="slices_w_real_airbubble_copied" style="width: 300px;">
       <figcaption>real airbubbles transfered to non airbubble sample</figcaption>
     </figure>
   </div>
