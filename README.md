@@ -35,4 +35,15 @@ Another idea is to identify the airbubbles in the sample and extract the airbubb
 | slices with real airbubble | real airbubbles transfered to non airbubble sample |
 
 
-## Training a pix2pix
+## Training pix2pix
+After the data preprocessing with the synthetic air and actual air pairs a pix2pix model is trained with both the datasets. 
+
+### 1. Training with synthetic air
+The pix2pix model is trained for 30 epochs with a batch size of 1 and with 5500 sample paires. Figure below shows the result using the test source and target pairs with generated target images.
+
+<p align="center">
+    <img src="images/training_with_synthetic_air.png" alt="training_with_synthetic_air">
+</p>
+<p align="center">
+  Test Source Target pairs with generated images
+</p>
