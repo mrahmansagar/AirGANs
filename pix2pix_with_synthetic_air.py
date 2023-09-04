@@ -64,8 +64,8 @@ model = load_model('models/src2tar_with_synthetic_air_after_165000.h5')
 test_src_img_dir = os.path.join(data_dir, 'with_air\\test')
 test_tar_img_dir = os.path.join(data_dir, 'without_air\\test')
 
-test_src_img = utils.load_images_in_shape(src_img_dir, color_mode = 'grayscale')
-test_tar_img = utils.load_images_in_shape(tar_img_dir, color_mode = 'grayscale')
+test_src_img = utils.load_images_in_shape(test_src_img_dir, color_mode = 'grayscale')
+test_tar_img = utils.load_images_in_shape(test_tar_img_dir, color_mode = 'grayscale')
 
 def plot_src_gen_tar(src, tar, gen_model, sample_size=5):
     idx = np.random.randint(0, len(src), sample_size)
