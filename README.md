@@ -47,3 +47,29 @@ The pix2pix model is trained for 30 epochs with a batch size of 1 and with 5500 
 <p align="center">
   Test Source Target pairs with generated images
 </p>
+
+### 2. Training with real air
+Using the actual air extration on top of samples without air the training pairs were created for training. Figure below shows the result after training the pix2pix network for 30 epochos with a batch size of 1. 
+
+
+<p align="center">
+    <img src="images/training_with_real_air.png" alt="training_with_real_air">
+</p>
+<p align="center">
+  Test Source Target pairs with generated images
+</p>
+
+Now the trained model is used to remove airbubbles from the actual samples where there is no known structures inside the airbubbles. The figures below shows some exaples how the trained network was able to remove airbubbles and companset with artificially generated structures. 
+
+<p align="center">
+    <img src="images/real_air_removed1.png" alt="real_air_removed1">
+</p>
+<p align="center">
+    <img src="images/real_air_removed2.png" alt="real_air_removed2">
+</p>
+<p align="center">
+    <img src="images/real_air_removed3.png" alt="real_air_removed3">
+</p>
+<p align="center">
+  Source with generated images
+</p>
