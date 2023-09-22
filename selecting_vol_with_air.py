@@ -34,7 +34,7 @@ samples = os.listdir(root_dir)
 for sample in samples:
     data_dir = os.path.join(root_dir, sample)
     with_air_dir = Path(os.path.join(data_dir, 'with_air'))
-    without_air_dir = Path(os.path.join(data_dir, 'withour_air'))
+    without_air_dir = Path(os.path.join(data_dir, 'without_air'))
 
     if not with_air_dir.exists():
         with_air_dir.mkdir()
