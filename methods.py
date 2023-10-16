@@ -159,22 +159,64 @@ def detect_patch_with_object(imarray, labels, patch_size=256, step_size=256, plo
     
 
 
-def validate_patches(ori_imarray, lowH, lowHoffset, highH, patch_params, patch_size=256):
+def validate_patches(ori_img, cropped_img, lowH, lowHoffset, highH, patch_params, patch_size=256):
+    
+    """
+    Validate and adjust patches to ensure they meet a specified size and dimensions.
+
+    Args:
+        ori_img (ndarray): The original image.
+        cropped_img (ndarray): The cropped image with patches.
+        lowH (int): A value representing the lower bound of height in the original image.
+        lowHoffset (int): An offset value for adjusting the lower height boundary.
+        highH (int): The upper bound of height in the original image.
+        patch_params (list): A list of dictionaries, where each dictionary contains patch parameters, including patch height, width, and coordinates.
+        patch_size (int, optional): The desired size for patches (default is 256).
+
+    Returns:
+        ndarray: The adjusted image array with validated patches.
+        list: The list of dictionaries containing adjusted patch parameters.
+
+    This function validates and adjusts patches to ensure they meet the specified 
+    size and dimensions. It checks each patch's height and width, and if they 
+    are smaller than the patch size, it increases the height and width to match 
+    the patch_size. It also adjusts the patch coordinates accordingly. 
+    The function then validates the height and width of the original image and 
+    pads it if necessary to accommodate the adjusted patches.
+
+    Example usage:
+    validated_image, validated_patch_params = validate_patches(original_image, 
+                cropped_image, 50, 10, 500, patch_parameters, patch_size=256)
+    """
+    
     h2badded = 0
+    w2badded = 0
     for params in patch_params:
-        if params['patch_height'] < patch_size:
+        if params['patch_height'] < patch_size or params['patch_width'] < patch_size:
             h2badded = patch_size - params['patch_height']
             params['patch_height'] = params['patch_height'] + h2badded
+            w2badded = patch_size - params['patch_width']
+            params['patch_width'] = params['patch_width'] + w2badded
+            
             x1, y1 = params['patch_coords'][0]
             x2, y2 = params['patch_coords'][1]
-            cor = patch_size -(y2-y1)
-            params['patch_coords'] = ((x1, y1), (x2, y2+cor))
+            corH = patch_size -(y2-y1)
+            corW = patch_size - (x2-x1)
+            params['patch_coords'] = ((x1, y1), (x2+corW, y2+corH))
     
-    imarray = ori_imarray[int(abs(lowH[0])+lowHoffset):int(abs(highH[0]))+h2badded, :]
+    ori_height = ori_img.shape[0] - lowH - lowHoffset
+    cropped_height = cropped_img.shape[0] + h2badded
+    
+    if ori_height < cropped_height:
+        ori_img = np.pad(ori_img, ((0, h2badded), (0, 0)), mode='edge')
+    
+    ori_width = ori_img.shape[1]
+    cropped_width = cropped_img.shape[1] + w2badded
+    
+    if ori_width < cropped_width:
+        ori_img = np.pad(ori_img, ((0, 0), (0, w2badded)), mode='edge')
+        
+    
+    imarray = ori_img[lowH+lowHoffset:highH+h2badded, :]
     
     return imarray, patch_params
-        
-        
-        
-        
-        
