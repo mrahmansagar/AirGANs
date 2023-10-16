@@ -64,7 +64,7 @@ imarray = np.clip(imarray, 0.0005, 0.003)
 imarray = norm8bit(imarray)
 
 from scipy import ndimage as nd
-from skimage.filters import roberts, sobel, scharr, prewitt, farid
+from skimage.filters import prewitt
 from skimage.transform import hough_line, hough_line_peaks
 from skimage import img_as_ubyte
 
