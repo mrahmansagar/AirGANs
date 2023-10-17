@@ -220,3 +220,83 @@ def validate_patches(ori_img, cropped_img, lowH, lowHoffset, highH, patch_params
     imarray = ori_img[lowH+lowHoffset:highH+h2badded, :]
     
     return imarray, patch_params
+
+
+def apply_model_to_patch(model, patch):
+    
+    """
+    Apply a machine learning model to a patch of data.
+
+    Args:
+        model (keras.Model): A machine learning model (e.g., a Keras model) to 
+        apply to the input patch.
+        patch (ndarray): An input patch of data to be processed by the model.
+
+    Returns:
+        ndarray: The output of the model applied to the input patch.
+
+    This function takes an input patch of data and applies a machine learning 
+    model to it. It first ensures that the input patch has the same shape as the 
+    expected input shape of the model by performing resizing using interpolation. 
+    Then, it expands the dimensions of the input patch to match the expected 
+    input shape of the model and applies the model for prediction. 
+    The output of the model is then resized back to match the original size of 
+    the input patch.
+
+    Example usage:
+    input_patch = load_data_patch("input_patch.jpg")
+    model = load_trained_model("model.h5")
+    output_patch = apply_model_to_patch(model, input_patch)
+    """
+    
+    patch_shape = patch.shape
+    model_input_shape = model.input_shape[1:-1]
+    
+    input_zoom_factor = np.array(model_input_shape) / np.array(patch_shape)
+    
+    model_input = nd.zoom(patch, input_zoom_factor)
+    model_input = np.expand_dims(model_input, axis=(0, -1))
+    
+    model_output = model.predict(model_input, verbose=0)
+    model_output = np.squeeze(model_output)
+    
+    output_zoom_factor = 1/input_zoom_factor
+    output = nd.zoom(model_output, output_zoom_factor)
+    
+    return output
+    
+    
+def resize_image(image, target_shape):
+    return nd.zoom(image, (target_shape[0] / image.shape[0], target_shape[1] / image.shape[1]))
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
