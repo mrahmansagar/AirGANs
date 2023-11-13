@@ -1,0 +1,135 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Nov 13 09:10:25 2023
+
+@author: Mmr Sagar
+PhD Researcher | MPI-NAT Goettingen, Germany
+"""
+
+import os 
+import numpy as np
+import matplotlib.pyplot as plt 
+from PIL import Image
+import tifffile
+
+from scipy import ndimage as nd
+from skimage import img_as_ubyte
+
+from tqdm import tqdm
+
+os.sys.path.insert(0, 'E:\\dev\\packages')
+from proUtils import utils
+
+import methods
+
+data_dir = 'F:\\MD_1264_A3_1_Z9.9mm\\'
+slice_dir = os.path.join(data_dir, 'slices')
+
+sample_slice = 'slice_0003.tif'
+
+# Reading the slice 
+im = Image.open(os.path.join(slice_dir, sample_slice))
+imarray = np.array(im)
+# imarray = (imarray - new_air) / new_diff * old_diff + old_air
+imarray = np.clip(imarray, 0.0005, 0.003)
+imarray = utils.norm8bit(imarray)
+
+
+# rotation correction and find the start and end point of the patches 
+rotated_image, rotation, lowdist = utils.tilt_correction(imarray, edge_th=0.1, ang_vari=4, plot=True)
+_, _, highdist = utils.tilt_correction(imarray, edge_th=250)
+
+start_point = int(abs(lowdist[0]))
+end_point = int(abs(highdist[0]))
+h_offset = 150
+
+# with the calculated range getting the section of the image 
+croped_imarray = rotated_image[start_point+h_offset:end_point, :]
+plt.figure(figsize=(12,6))
+plt.imshow(croped_imarray, cmap='gray')
+plt.show()
+
+# setting the patch size
+patch_size = 256
+
+# loading the model which is trained for 30 epochs
+from keras.models import load_model
+model = load_model('models/src2tar_with_real_air_after_165000.h5')
+
+# all the slices in the directory 
+slices = os.listdir(slice_dir)
+
+# save dir 
+save_dir = os.path.join(data_dir, 'air_removed_slices')
+if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+
+for aSlice in tqdm(slices):
+    # Reading the slice 
+    im = Image.open(os.path.join(slice_dir, aSlice))
+    imarray = np.array(im)
+    # imarray = (imarray - new_air) / new_diff * old_diff + old_air
+    imarray = np.clip(imarray, 0.0005, 0.003)
+    imarray = utils.norm8bit(imarray)
+    
+    
+    if rotation < 0 :
+        rotated_imarray = nd.rotate(imarray, angle=90+rotation, reshape=False)
+    else:
+        rotated_imarray = nd.rotate(imarray, angle=180+90+rotation, reshape=False)
+    
+    croped_imarray = rotated_imarray[start_point+h_offset:end_point, :]
+    # finding the airbubbles in the slice with thresholding and some binary morphology
+    air_imarray = croped_imarray < 1
+    
+    air_imarray = nd.binary_fill_holes(air_imarray, np.ones((10, 10)))
+    air_imarray = nd.binary_opening(air_imarray, np.ones((10, 10)))
+    
+    # calculation of airbubble parameters with options to exclude large airbubbles/edges 
+    object_params, labels = methods.calc_binObject_params(air_imarray, maxObj_height=512, maxObj_width=512, plot=False)
+    # object_params are not used here for the further steps but can be usefull for 
+    # other calculations
+
+    # get the patches with airbubbles which are identified 
+    patch_results = methods.detect_patch_with_object(croped_imarray, labels, patch_size=patch_size, step_size=patch_size, plot=False)
+
+    # validate the patch_result for the edge patches.
+    # adjust imarray with padding for edge patches  
+    adjusted_imarray, patch_results = methods.validate_patches(rotated_imarray, croped_imarray, start_point, h_offset, end_point, patch_results, patch_size=patch_size)
+    
+    # making a copy of adjusted image 
+    removed_air = np.copy(adjusted_imarray)
+    
+    # iterating over the patches and applying the Generator model 
+    for params in patch_results:
+        
+        if params['num_objects_in_patch'] > 0:
+            x1, y1 = params['patch_coords'][0]
+            x2, y2 = params['patch_coords'][1]
+    
+            patch = adjusted_imarray[y1:y2, x1:x2]
+            
+            patch = ((patch-127.5)/127.5).astype(np.float32)
+            
+            air_rem_patch = methods.apply_model_to_patch(model, patch)
+            
+            air_rem_patch = (air_rem_patch+1)/2.0
+            air_rem_patch = img_as_ubyte(air_rem_patch)
+            
+            removed_air[y1:y2, x1:x2] = air_rem_patch
+    
+    # getting the shape of non padded image 
+    rows, cols = croped_imarray.shape
+    
+    removed_air = removed_air[:rows, :cols]
+    
+    fName = os.path.join(save_dir, aSlice) 
+    tifffile.imwrite(fName, removed_air)
+
+    
+    
+    
+    
+    
+
