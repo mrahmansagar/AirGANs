@@ -23,7 +23,7 @@ os.sys.path.insert(0, 'E:\\dev\\packages')
 from proUtils import utils
 
 
-data_dir = data_dir = 'E:\\projects\\AirGANs\\data\\MD_1264_A6_1_Z3.3mm_corr_phrt\\'
+data_dir = data_dir = 'F:\\MD_1264_A10_Z6.6mm\\'
 slice_dir = os.path.join(data_dir, 'slices')
 
 
@@ -40,7 +40,7 @@ if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
 
-sample_slice = 'slice_0643.tif'
+sample_slice = 'slice_0346.tif'
 
 # Reading the slice 
 im = Image.open(os.path.join(slice_dir, sample_slice))
@@ -105,7 +105,7 @@ model = load_model('E:\\projects\\AirGANs\\models\\src2tar_air3d_after_71999.h5'
 
 for chunk in tqdm(chunk_list(slices, chunk_size=256), desc='Progress...'):
     vol_chunk = np.empty(shape=(len(chunk), *imarray.shape), dtype=imarray.dtype)
-    for i, fname in enumerate(tqdm(chunk, desc='Loading slices....')):
+    for i, fname in enumerate(tqdm(chunk, desc='Loading slices...')):
         im = Image.open(os.path.join(slice_dir, fname))
         imarray = np.array(im)
     #     imarray = (imarray - new_air) / new_diff * old_diff + old_air
@@ -117,33 +117,37 @@ for chunk in tqdm(chunk_list(slices, chunk_size=256), desc='Progress...'):
     
     # Identifing airs in the chunk 
     air_vol_chunk = np.empty_like(cropped_vol_chunk)
-    for i in tqdm(range(0, len(cropped_vol_chunk, desc='Identifying air'))):
+    for i in tqdm(range(0, len(cropped_vol_chunk)), desc='Identifying air...'):
         aslice = cropped_vol_chunk[i]
         th_slice = aslice < 1
         th_slice = nd.binary_fill_holes(th_slice, np.ones((10,10)))
         th_slice = nd.binary_opening(th_slice, np.ones((10,10)))
         th_labels, num_features = nd.label(th_slice)
         
-        for lab in range(0, num_features + 1):
-            # Find coordinates of the labeled component
-            coords = np.column_stack(np.where(th_labels == lab))
-            # Calculate the bounding box coordinates
-            y1, x1 = coords.min(axis=0)
-            y2, x2 = coords.max(axis=0)
-    
-            # Calculate width and height
-            width = x2 - x1 + 1 
-            height = y2 - y1 + 1
-    
-            if width < 512 and height < 512:
-                # Do something with the parameters if needed
-                pass
-            else:
-                # Set the value to 0 in the corresponding label coordinates in the th_slice
-                th_slice[th_labels == lab] = 0
-    
-        # You can assign the modified th_slice to air_vol if needed
-        air_vol_chunk[i] = th_slice     
+        if num_features > 1:
+            for lab in range(0, num_features + 1):
+                # Find coordinates of the labeled component
+                coords = np.column_stack(np.where(th_labels == lab))
+                # Calculate the bounding box coordinates
+                y1, x1 = coords.min(axis=0)
+                y2, x2 = coords.max(axis=0)
+
+                # Calculate width and height
+                width = x2 - x1 + 1 
+                height = y2 - y1 + 1
+
+                if width < 512 and height < 512:
+                    # Do something with the parameters if needed
+                    pass
+                else:
+                    # Set the value to 0 in the corresponding label coordinates in the th_slice
+                    th_slice[th_labels == lab] = 0
+
+            # You can assign the modified th_slice to air_vol if needed
+            air_vol_chunk[i] = th_slice
+        else:
+            # You can assign the modified th_slice to air_vol if needed
+            air_vol_chunk[i] = th_slice      
     
     padded_vol_chunk = pad_volume(cropped_vol_chunk, patch_size)
     padded_air_vol_chunk = pad_volume(air_vol_chunk, patch_size)
