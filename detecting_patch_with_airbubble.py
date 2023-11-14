@@ -75,7 +75,7 @@ air_imarray = nd.binary_opening(air_imarray, np.ones((10, 10)))
 
 
 # setting the patch size
-patch_size = 512
+patch_size = 256
 # calculation of airbubble parameters with options to exclude large airbubbles/edges 
 object_params, labels = methods.calc_binObject_params(air_imarray, maxObj_height=512, maxObj_width=512, plot=True)
 # object_params are not used here for the further steps but can be usefull for 
