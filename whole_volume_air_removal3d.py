@@ -1,0 +1,194 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Nov 13 16:46:33 2023
+
+@author: Mmr Sagar
+PhD Researcher | MPI-NAT Goettingen, Germany
+
+"""
+
+import os 
+import numpy as np
+import matplotlib.pyplot as plt 
+from PIL import Image 
+from scipy import ndimage as nd
+from skimage import img_as_ubyte
+import tifffile
+
+from keras.models import load_model
+
+from tqdm import tqdm
+
+os.sys.path.insert(0, 'E:\\dev\\packages')
+from proUtils import utils
+
+
+data_dir = data_dir = 'E:\\projects\\AirGANs\\data\\MD_1264_A6_1_Z3.3mm_corr_phrt\\'
+slice_dir = os.path.join(data_dir, 'slices')
+
+
+# setting the patch size
+patch_size = (256, 256, 256)
+
+# all the slices in the directory 
+slices = os.listdir(slice_dir)
+
+
+# save dir 
+save_dir = os.path.join(data_dir, 'air3d_removed_slices')
+if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+
+sample_slice = 'slice_0643.tif'
+
+# Reading the slice 
+im = Image.open(os.path.join(slice_dir, sample_slice))
+imarray = np.array(im)
+# imarray = (imarray - new_air) / new_diff * old_diff + old_air
+imarray = np.clip(imarray, 0.0005, 0.003)
+imarray = utils.norm8bit(imarray)
+
+# rotation correction and find the start and end point of the patches 
+rotated_image, rotation, lowdist = utils.tilt_correction(imarray, edge_th=0.1, ang_vari=4, plot=True)
+_, _, highdist = utils.tilt_correction(imarray, edge_th=250)
+
+start_point = int(abs(lowdist[0]))
+end_point = int(abs(highdist[0]))
+h_offset = 150
+
+# with the calculated range getting the section of the image 
+croped_imarray = rotated_image[start_point+h_offset:end_point, :]
+plt.figure(figsize=(12,6))
+plt.imshow(croped_imarray, cmap='gray')
+plt.show()
+
+
+
+# volume_shape = (len(slices), *imarray.shape)
+# Z, X, Y = volume_shape
+# c, a, b = patch_size
+
+def pad_volume(volume, patch_size):
+    X, Y, Z = volume.shape
+    a, b, c = patch_size
+
+    # Check if dimensions are divisible by patch size
+    pad_x = (X % a != 0) * (a - X % a)
+    pad_y = (Y % b != 0) * (b - Y % b)
+    pad_z = (Z % c != 0) * (c - Z % c)
+
+    # Pad the volume with zeros if needed
+    if pad_x > 0 or pad_y > 0 or pad_z > 0:
+        volume = np.pad(volume, ((0, pad_x), (0, pad_y), (0, pad_z)), mode='constant', constant_values=0)
+
+    return volume
+
+
+def chunk_list(input_list, chunk_size):
+    """
+    Generate chunks of a specified size from a given list.
+
+    Parameters:
+    - input_list: The input list to be chunked.
+    - chunk_size: The size of each chunk.
+
+    Returns:
+    A generator that produces chunks of the specified size.
+    """
+    for i in range(0, len(input_list), chunk_size):
+        yield input_list[i:i + chunk_size]
+
+
+model = load_model('E:\\projects\\AirGANs\\models\\src2tar_air3d_after_71999.h5')
+
+
+for chunk in tqdm(chunk_list(slices, chunk_size=256), desc='Progress...'):
+    vol_chunk = np.empty(shape=(len(chunk), *imarray.shape), dtype=imarray.dtype)
+    for i, fname in enumerate(tqdm(chunk, desc='Loading slices....')):
+        im = Image.open(os.path.join(slice_dir, fname))
+        imarray = np.array(im)
+    #     imarray = (imarray - new_air) / new_diff * old_diff + old_air
+        imarray = np.clip(imarray, 0.0005, 0.003)
+        imarray = utils.norm8bit(imarray)
+        vol_chunk[i, :, :] = imarray
+    
+    cropped_vol_chunk = vol_chunk[:,start_point+h_offset:end_point, :]
+    
+    # Identifing airs in the chunk 
+    air_vol_chunk = np.empty_like(cropped_vol_chunk)
+    for i in tqdm(range(0, len(cropped_vol_chunk, desc='Identifying air'))):
+        aslice = cropped_vol_chunk[i]
+        th_slice = aslice < 1
+        th_slice = nd.binary_fill_holes(th_slice, np.ones((10,10)))
+        th_slice = nd.binary_opening(th_slice, np.ones((10,10)))
+        th_labels, num_features = nd.label(th_slice)
+        
+        for lab in range(0, num_features + 1):
+            # Find coordinates of the labeled component
+            coords = np.column_stack(np.where(th_labels == lab))
+            # Calculate the bounding box coordinates
+            y1, x1 = coords.min(axis=0)
+            y2, x2 = coords.max(axis=0)
+    
+            # Calculate width and height
+            width = x2 - x1 + 1 
+            height = y2 - y1 + 1
+    
+            if width < 512 and height < 512:
+                # Do something with the parameters if needed
+                pass
+            else:
+                # Set the value to 0 in the corresponding label coordinates in the th_slice
+                th_slice[th_labels == lab] = 0
+    
+        # You can assign the modified th_slice to air_vol if needed
+        air_vol_chunk[i] = th_slice     
+    
+    padded_vol_chunk = pad_volume(cropped_vol_chunk, patch_size)
+    padded_air_vol_chunk = pad_volume(air_vol_chunk, patch_size)
+   
+    labels, _ = nd.label(padded_air_vol_chunk)
+    
+    depth, height, width = padded_air_vol_chunk.shape
+    d_patch, h_patch, w_patch = patch_size
+    
+    air_rem_chunk = np.copy(padded_vol_chunk)
+    for d in range(0, depth, d_patch):
+        for h in tqdm(range(0, height, h_patch), desc='Removing Air...'):
+            for w in range(0, width, w_patch):
+                d_end = min(d + d_patch, depth)
+                h_end = min(h + h_patch, height)
+                w_end = min(w + w_patch, width)
+    
+                patch_lab = labels[d:d_end, h:h_end, w:w_end]    
+    #             print(patch.shape)
+                # Find unique labels within the patch
+                unique_labels = np.unique(patch_lab)
+                # Count the number of unique labels (excluding background label)
+                num_objects_in_patch = len(unique_labels) - 1
+                
+                if num_objects_in_patch > 0:
+                    patch = padded_vol_chunk[d:d_end, h:h_end, w:w_end]
+                    patch_inShape = np.expand_dims((patch-127.5)/127.5, axis=(0, -1))
+                    air_rem_patch = np.squeeze(model.predict(patch_inShape, verbose=0))
+                    air_rem_patch = (air_rem_patch+1)/2.0
+                    air_rem_patch = img_as_ubyte(air_rem_patch)
+                    air_rem_chunk[d:d_end, h:h_end, w:w_end] = air_rem_patch
+    
+    d, h, w = cropped_vol_chunk.shape
+    air_rem_chunk = air_rem_chunk[0:d, 0:h, 0:w]
+    print('Saving slices....')
+    for i, f in enumerate(chunk):
+        fName = os.path.join(save_dir, f) 
+        tifffile.imwrite(fName, air_rem_chunk[i])
+
+print('completed.')
+        
+        
+                
+    
+    
+        
+        
+    
