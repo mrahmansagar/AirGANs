@@ -105,13 +105,19 @@ model = load_model('E:\\projects\\AirGANs\\models\\src2tar_air3d_after_71999.h5'
 
 for chunk in tqdm(chunk_list(slices, chunk_size=256), desc='Progress...'):
     vol_chunk = np.empty(shape=(len(chunk), *imarray.shape), dtype=imarray.dtype)
-    for i, fname in enumerate(tqdm(chunk, desc='Loading slices...')):
+    prev_imarray = None
+    for i, fname in enumerate(tqdm(chunk, desc='Loading slices....')):
         im = Image.open(os.path.join(slice_dir, fname))
         imarray = np.array(im)
     #     imarray = (imarray - new_air) / new_diff * old_diff + old_air
         imarray = np.clip(imarray, 0.0005, 0.003)
-        imarray = utils.norm8bit(imarray)
-        vol_chunk[i, :, :] = imarray
+        nan_indices = np.isnan(imarray)
+        if np.any(nan_indices) and prev_imarray is not None:
+            vol_chunk[i, :, :] = prev_imarray
+        else:
+            imarray = utils.norm8bit(imarray)
+            vol_chunk[i, :, :] = imarray
+            prev_imarray = imarray
     
     cropped_vol_chunk = vol_chunk[:,start_point+h_offset:end_point, :]
     
