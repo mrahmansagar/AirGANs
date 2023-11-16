@@ -29,14 +29,14 @@ slice_dir = os.path.join(data_dir, 'slices')
 
 
 # setting the patch size
-patch_size = (256, 256, 256)
+patch_size = (512, 512, 512)
 
 # all the slices in the directory 
 slices = os.listdir(slice_dir)
 
 
 # save dir 
-save_dir = os.path.join(data_dir, 'air3d_removed_slices_v2')
+save_dir = os.path.join(data_dir, 'air3d_removed_slices_v2_512')
 if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
@@ -63,12 +63,6 @@ croped_imarray = rotated_image[start_point+h_offset:end_point, :]
 plt.figure(figsize=(12,6))
 plt.imshow(croped_imarray, cmap='gray')
 plt.show()
-
-
-
-# volume_shape = (len(slices), *imarray.shape)
-# Z, X, Y = volume_shape
-# c, a, b = patch_size
 
 def pad_volume(volume, patch_size):
     X, Y, Z = volume.shape
@@ -104,8 +98,8 @@ def chunk_list(input_list, chunk_size):
 model = load_model('E:\\projects\\AirGANs\\models\\src2tar_air3d_after_71999.h5')
 
 
-for step, chunk in enumerate(chunk_list(slices, chunk_size=256)):
-    print('Processing...', step, 'of', len(list(chunk_list(slices, chunk_size=256))))
+for step, chunk in enumerate(chunk_list(slices[512:], chunk_size=512)):
+    print('Processing...', step+1, 'of', len(list(chunk_list(slices, chunk_size=512))))
     vol_chunk = np.empty(shape=(len(chunk), *imarray.shape), dtype=imarray.dtype)
     prev_imarray = None
     for i, fname in enumerate(tqdm(chunk, desc='Loading slices....')):
@@ -182,7 +176,12 @@ for step, chunk in enumerate(chunk_list(slices, chunk_size=256)):
                     patch_inShape = ((patch-127.5)/127.5).astype(np.float32)
                     air_rem_patch = methods.apply_model_to_patch(model, patch_inShape)
                     air_rem_patch = (air_rem_patch+1)/2.0
-                    air_rem_patch = img_as_ubyte(air_rem_patch)
+                    try:
+                        air_rem_patch = img_as_ubyte(air_rem_patch)
+                    except:
+                        air_rem_patch = np.clip(air_rem_patch, -1, 1)
+                        air_rem_patch = img_as_ubyte(air_rem_patch)
+                        
                     air_rem_chunk[d:d_end, h:h_end, w:w_end] = air_rem_patch
     
     print('Saving slices....')
