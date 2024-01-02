@@ -26,6 +26,8 @@ data_dir = 'E:\\Data\\air_bubbles\\3d'
 src_vol_dir = os.path.join(data_dir, 'extracted_air', 'train')
 tar_vol_dir = os.path.join(data_dir, 'without_air', 'train')
 
+vol_shape = (256, 256, 256, 1)
+
 # load images/data in shape for training data generation 
 def load_volumes_in_shape(vol_dir, **kwargs):
     """
@@ -38,10 +40,11 @@ def load_volumes_in_shape(vol_dir, **kwargs):
     Returns:
         numpy.ndarray: Array containing the loaded images in the specified shape.
     """
-    vol_data_in_shape = []
+    
     list_of_volumes = Tcl().call('lsort', '-dict', os.listdir(vol_dir))
-
-    for v in tqdm(list_of_volumes):
+    vol_data_in_shape = np.zeros((len(list_of_volumes), *(vol_shape)), dtype=np.float32)
+    
+    for i, v in enumerate(tqdm(list_of_volumes)):
         vol = []
         list_of_images = Tcl().call('lsort', '-dict', os.listdir(os.path.join(vol_dir, v)))
         for im in list_of_images:
@@ -50,9 +53,8 @@ def load_volumes_in_shape(vol_dir, **kwargs):
             imarray = (imarray- 127.5) / 127.5
             vol.append(imarray)
         vol = np.asarray(vol)
-        vol_data_in_shape.append(vol)
-    
-    vol_data_in_shape = np.asarray(vol_data_in_shape)    
+        vol_data_in_shape[i] = vol
+        
     print('Loaded', vol_data_in_shape.shape, 'volumes')
     
     return vol_data_in_shape
