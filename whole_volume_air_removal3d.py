@@ -23,7 +23,7 @@ os.sys.path.insert(0, 'E:\\dev\\packages')
 from proUtils import utils
 
 
-data_dir = data_dir = 'F:\\MD_1264_A10_Z6.6mm\\'
+data_dir = 'F:\\MD_1264_A10_Z6.6mm\\'
 slice_dir = os.path.join(data_dir, 'slices')
 
 
@@ -35,7 +35,7 @@ slices = os.listdir(slice_dir)
 
 
 # save dir 
-save_dir = os.path.join(data_dir, 'air3d_removed_slices')
+save_dir = os.path.join(data_dir, 'air3d_removed_slices_full')
 if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
@@ -100,7 +100,7 @@ def chunk_list(input_list, chunk_size):
         yield input_list[i:i + chunk_size]
 
 
-model = load_model('E:\\projects\\AirGANs\\models\\src2tar_air3d_after_71999.h5')
+model = load_model('E:\\projects\\AirGANs\\air3d_202401031030\\src2tar_air3d_after_179999.h5')
 
 
 for chunk in tqdm(chunk_list(slices, chunk_size=256), desc='Progress...'):
@@ -187,12 +187,16 @@ for chunk in tqdm(chunk_list(slices, chunk_size=256), desc='Progress...'):
                     air_rem_chunk[d:d_end, h:h_end, w:w_end] = air_rem_patch
     
     d, h, w = cropped_vol_chunk.shape
-    air_rem_chunk = air_rem_chunk[0:d, 0:h, 0:w]
+    air_rem_chunk = air_rem_chunk[0:d, 0:h, 0:w]    
+
+    full_air_rem_chunk = np.copy(vol_chunk)
+    full_air_rem_chunk[:,start_point+h_offset:end_point, :] = air_rem_chunk
+    
     print('Saving slices....')
     for i, f in enumerate(chunk):
         fName = os.path.join(save_dir, f) 
-        tifffile.imwrite(fName, air_rem_chunk[i])
-
+        tifffile.imwrite(fName, full_air_rem_chunk[i])
+        
 print('completed.')
         
         
