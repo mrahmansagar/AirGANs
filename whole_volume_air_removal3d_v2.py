@@ -29,18 +29,21 @@ slice_dir = os.path.join(data_dir, 'slices')
 
 
 # setting the patch size
-patch_size = (512, 512, 512)
+patch_size = (256, 256, 256)
 
 # all the slices in the directory 
 slices = os.listdir(slice_dir)
 
 
 # save dir 
-save_dir = os.path.join(data_dir, 'air3d_removed_slices_v2_512')
+save_dir = os.path.join(data_dir, 'air3d_removed_slices_v2_full')
 if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-
+"""
+Here a sample slice is selected to find the start and end point. 
+for 3D the slices are not rotated 
+"""
 sample_slice = 'slice_0346.tif'
 
 # Reading the slice 
@@ -95,11 +98,28 @@ def chunk_list(input_list, chunk_size):
         yield input_list[i:i + chunk_size]
 
 
-model = load_model('E:\\projects\\AirGANs\\models\\src2tar_air3d_after_71999.h5')
+model = load_model('E:\\projects\\AirGANs\\air3d_202401031030\\src2tar_air3d_after_179999.h5')
 
+"""
+Selecting chunks according to the size of the patch. e.g. if the patch size is 
+(256,256,256) then the in a chunk is 256 slices.
 
-for step, chunk in enumerate(chunk_list(slices[512:], chunk_size=512)):
-    print('Processing...', step+1, 'of', len(list(chunk_list(slices, chunk_size=512))))
+while loading the slices in a chunk checking if a slice with nan values exists
+then replace it with previous slice so in the end there is no blanck slice in
+chunk.
+
+Then each slice in the chunk is used to identify if air with thresholding and 
+if the size of an object is bigger than 512 then they are filled with background
+(here 0). This is to companset round edges in the slice. 
+
+Then the  
+
+"""
+# number of slices to process at a time. normally same as the size of the patch depth 
+chunk_depth = patch_size[0]
+
+for step, chunk in enumerate(chunk_list(slices, chunk_size=chunk_depth)):
+    print('Processing...', step+1, 'of', len(list(chunk_list(slices, chunk_size=chunk_depth))))
     vol_chunk = np.empty(shape=(len(chunk), *imarray.shape), dtype=imarray.dtype)
     prev_imarray = None
     for i, fname in enumerate(tqdm(chunk, desc='Loading slices....')):
@@ -132,7 +152,7 @@ for step, chunk in enumerate(chunk_list(slices[512:], chunk_size=512)):
                 coords = np.column_stack(np.where(th_labels == lab))
                 # Calculate the bounding box coordinates
                 y1, x1 = coords.min(axis=0)
-                y2, x2 = coords.max(axis=0)
+                y2, x2 = coords.max(axis=0) 
 
                 # Calculate width and height
                 width = x2 - x1 + 1 
@@ -183,10 +203,13 @@ for step, chunk in enumerate(chunk_list(slices[512:], chunk_size=512)):
                         air_rem_patch = img_as_ubyte(air_rem_patch)
                         
                     air_rem_chunk[d:d_end, h:h_end, w:w_end] = air_rem_patch
+    # saving back to the original volume to retain the original shape 
+    full_air_rem_chunk = np.copy(vol_chunk)
+    full_air_rem_chunk[:,start_point+h_offset:end_point, :] = air_rem_chunk
     
     print('Saving slices....')
     for i, f in enumerate(chunk):
         fName = os.path.join(save_dir, f) 
-        tifffile.imwrite(fName, air_rem_chunk[i])
+        tifffile.imwrite(fName, full_air_rem_chunk[i])
 
 print('completed.')

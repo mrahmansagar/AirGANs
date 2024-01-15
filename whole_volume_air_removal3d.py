@@ -23,7 +23,9 @@ os.sys.path.insert(0, 'E:\\dev\\packages')
 from proUtils import utils
 
 
-data_dir = 'F:\\MD_1264_A10_Z6.6mm\\'
+import methods
+
+data_dir = 'D:\\VILI\\recons\\MD_1264_A10_Z6.6mm\\'
 slice_dir = os.path.join(data_dir, 'slices')
 
 
@@ -35,7 +37,7 @@ slices = os.listdir(slice_dir)
 
 
 # save dir 
-save_dir = os.path.join(data_dir, 'air3d_removed_slices_full')
+save_dir = os.path.join(data_dir, 'air3d_removed_slices')
 if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
@@ -63,11 +65,6 @@ plt.figure(figsize=(12,6))
 plt.imshow(croped_imarray, cmap='gray')
 plt.show()
 
-
-
-# volume_shape = (len(slices), *imarray.shape)
-# Z, X, Y = volume_shape
-# c, a, b = patch_size
 
 def pad_volume(volume, patch_size):
     X, Y, Z = volume.shape
@@ -102,8 +99,11 @@ def chunk_list(input_list, chunk_size):
 
 model = load_model('E:\\projects\\AirGANs\\air3d_202401031030\\src2tar_air3d_after_179999.h5')
 
+# number of slices to process at a time. normally same as the size of the patch depth 
+chunk_depth = patch_size[0]
 
-for chunk in tqdm(chunk_list(slices, chunk_size=256), desc='Progress...'):
+for step, chunk in enumerate(chunk_list(slices, chunk_size=chunk_depth)):
+    print('Processing...', step+1, 'of', len(list(chunk_list(slices, chunk_size=chunk_depth))))
     vol_chunk = np.empty(shape=(len(chunk), *imarray.shape), dtype=imarray.dtype)
     prev_imarray = None
     for i, fname in enumerate(tqdm(chunk, desc='Loading slices....')):
@@ -172,7 +172,6 @@ for chunk in tqdm(chunk_list(slices, chunk_size=256), desc='Progress...'):
                 w_end = min(w + w_patch, width)
     
                 patch_lab = labels[d:d_end, h:h_end, w:w_end]    
-    #             print(patch.shape)
                 # Find unique labels within the patch
                 unique_labels = np.unique(patch_lab)
                 # Count the number of unique labels (excluding background label)
@@ -180,15 +179,21 @@ for chunk in tqdm(chunk_list(slices, chunk_size=256), desc='Progress...'):
                 
                 if num_objects_in_patch > 0:
                     patch = padded_vol_chunk[d:d_end, h:h_end, w:w_end]
-                    patch_inShape = np.expand_dims((patch-127.5)/127.5, axis=(0, -1))
-                    air_rem_patch = np.squeeze(model.predict(patch_inShape, verbose=0))
+                    patch_inShape = ((patch-127.5)/127.5).astype(np.float32)
+                    air_rem_patch = methods.apply_model_to_patch(model, patch_inShape)
                     air_rem_patch = (air_rem_patch+1)/2.0
-                    air_rem_patch = img_as_ubyte(air_rem_patch)
+                    try:
+                        air_rem_patch = img_as_ubyte(air_rem_patch)
+                    except:
+                        air_rem_patch = np.clip(air_rem_patch, -1, 1)
+                        air_rem_patch = img_as_ubyte(air_rem_patch)
+                        
                     air_rem_chunk[d:d_end, h:h_end, w:w_end] = air_rem_patch
     
     d, h, w = cropped_vol_chunk.shape
     air_rem_chunk = air_rem_chunk[0:d, 0:h, 0:w]    
-
+    
+    # saving back to the original volume to retain the original shape 
     full_air_rem_chunk = np.copy(vol_chunk)
     full_air_rem_chunk[:,start_point+h_offset:end_point, :] = air_rem_chunk
     
