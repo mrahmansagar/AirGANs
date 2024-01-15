@@ -69,6 +69,6 @@ disc = models.build_discriminator(vol_shape, metrics=['accuracy'])
 gene = models.build_generator(vol_shape)
 # define the composite model
 p2p_model = models.build_pix2pix(gene, disc, vol_shape)
-models.train_pix2pix(gene, disc, p2p_model, src_vol, tar_vol, epochs=200, summary_interval=10, name='air3d_030124/src2tar_air3d')
+models.train_pix2pix(gene, disc, p2p_model, src_vol, tar_vol, epochs=200, summary_interval=10, name='air3d')
 
 

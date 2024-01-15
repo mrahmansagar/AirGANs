@@ -19,8 +19,8 @@ from GANs import utils
 from GANs.pix2pix import models 
 
 data_dir = 'E:\\Data\\air_bubbles'
-src_img_dir = os.path.join(data_dir, 'extracted_real_air\\train2')
-tar_img_dir = os.path.join(data_dir, 'without_air\\train')
+src_img_dir = os.path.join(data_dir, 'extracted_real_air\\train3')
+tar_img_dir = os.path.join(data_dir, 'without_air\\train3')
 
 
 src_img = utils.load_images_in_shape(src_img_dir, color_mode = 'grayscale')
@@ -49,11 +49,11 @@ tar_img = (tar_img - 127.5) / 127.5
 # define image shape
 img_shape = src_img.shape[1:]
 # define the models
-disc = models.build_discriminator(img_shape)
+disc = models.build_discriminator(img_shape, metrics=['accuracy'])
 gene = models.build_generator(img_shape)
 # define the composite model
 p2p_model = models.build_pix2pix(gene, disc, img_shape)
-models.train_pix2pix(gene, disc, p2p_model, src_img, tar_img, epochs=30, summary_interval=1, name='models/src2tar_with_real_air')
+models.train_pix2pix(gene, disc, p2p_model, src_img, tar_img, epochs=200, summary_interval=10, name='air2d_edge')
 
 # loading the model which is trained for 30 epochs
 from keras.models import load_model
