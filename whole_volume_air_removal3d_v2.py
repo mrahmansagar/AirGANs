@@ -24,7 +24,7 @@ from proUtils import utils
 
 import methods
 
-data_dir = data_dir = 'F:\\MD_1264_A10_Z6.6mm\\'
+data_dir = 'F:\\MD_1264_A10_Z6.6mm\\'
 slice_dir = os.path.join(data_dir, 'slices')
 
 
@@ -36,7 +36,7 @@ slices = os.listdir(slice_dir)
 
 
 # save dir 
-save_dir = os.path.join(data_dir, 'air3d_removed_slices_v2_full')
+save_dir = os.path.join(data_dir, 'air3d_removed_slices_v2')
 if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
@@ -66,21 +66,6 @@ croped_imarray = rotated_image[start_point+h_offset:end_point, :]
 plt.figure(figsize=(12,6))
 plt.imshow(croped_imarray, cmap='gray')
 plt.show()
-
-def pad_volume(volume, patch_size):
-    X, Y, Z = volume.shape
-    a, b, c = patch_size
-
-    # Check if dimensions are divisible by patch size
-    pad_x = (X % a != 0) * (a - X % a)
-    pad_y = (Y % b != 0) * (b - Y % b)
-    pad_z = (Z % c != 0) * (c - Z % c)
-
-    # Pad the volume with zeros if needed
-    if pad_x > 0 or pad_y > 0 or pad_z > 0:
-        volume = np.pad(volume, ((0, pad_x), (0, pad_y), (0, pad_z)), mode='constant', constant_values=0)
-
-    return volume
 
 
 def chunk_list(input_list, chunk_size):
