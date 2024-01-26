@@ -22,10 +22,10 @@ from proUtils import utils
 
 import methods
 
-data_dir = 'F:\\MD_1264_A3_1_Z9.9mm\\'
+data_dir = 'D:\\VILI\\recons\\MD_1264_A10_Z6.6mm\\'
 slice_dir = os.path.join(data_dir, 'slices')
 
-sample_slice = 'slice_0003.tif'
+sample_slice = 'slice_0346.tif'
 
 # Reading the slice 
 im = Image.open(os.path.join(slice_dir, sample_slice))
@@ -54,18 +54,18 @@ patch_size = 256
 
 # loading the model which is trained for 30 epochs
 from keras.models import load_model
-model = load_model('models/src2tar_with_real_air_after_165000.h5')
+model = load_model('E:\\projects\\AirGANs\\air2d_edge_202401151815\\model_after_637199.h5')
 
 # all the slices in the directory 
 slices = os.listdir(slice_dir)
 
 # save dir 
-save_dir = os.path.join(data_dir, 'air_removed_slices')
+save_dir = os.path.join(data_dir, 'air2d_removed_slices')
 if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
 
-for aSlice in tqdm(slices[950:]):
+for aSlice in tqdm(slices):
     
     # Reading the slice 
     im = Image.open(os.path.join(slice_dir, aSlice))
@@ -76,14 +76,18 @@ for aSlice in tqdm(slices[950:]):
     
     try: 
     
-        if rotation < 0 :
-            rotated_imarray = nd.rotate(imarray, angle=90+rotation, reshape=False)
-        else:
-            rotated_imarray = nd.rotate(imarray, angle=180+90+rotation, reshape=False)
+        #if rotation < 0 :
+            #rotated_imarray = nd.rotate(imarray, angle=90+rotation, reshape=False)
+        #else:
+            #rotated_imarray = nd.rotate(imarray, angle=180+90+rotation, reshape=False)
         
-        croped_imarray = rotated_imarray[start_point+h_offset:end_point, :]
+        #croped_imarray = rotated_imarray[start_point+h_offset:end_point, :]
+        croped_imarray = imarray[start_point+h_offset:end_point, :]
         # finding the airbubbles in the slice with thresholding and some binary morphology
-        air_imarray = croped_imarray < 1
+        #air_imarray = croped_imarray < 1
+        air = croped_imarray < 1
+        edge = croped_imarray > 150
+        air_imarray = air + edge
         
         air_imarray = nd.binary_fill_holes(air_imarray, np.ones((10, 10)))
         air_imarray = nd.binary_opening(air_imarray, np.ones((10, 10)))
@@ -98,7 +102,8 @@ for aSlice in tqdm(slices[950:]):
     
         # validate the patch_result for the edge patches.
         # adjust imarray with padding for edge patches  
-        adjusted_imarray, patch_results = methods.validate_patches(rotated_imarray, croped_imarray, start_point, h_offset, end_point, patch_results, patch_size=patch_size)
+        #adjusted_imarray, patch_results = methods.validate_patches(rotated_imarray, croped_imarray, start_point, h_offset, end_point, patch_results, patch_size=patch_size)
+        adjusted_imarray, patch_results = methods.validate_patches(imarray, croped_imarray, start_point, h_offset, end_point, patch_results, patch_size=patch_size)
         
         # making a copy of adjusted image 
         removed_air = np.copy(adjusted_imarray)
@@ -123,15 +128,18 @@ for aSlice in tqdm(slices[950:]):
         
         # getting the shape of non padded image 
         rows, cols = croped_imarray.shape
-        
         removed_air = removed_air[:rows, :cols]
         
+        # saving back to the original volume to retain the original shape 
+        full_air_rem_imarry = np.copy(imarray)
+        full_air_rem_imarry[start_point+h_offset:end_point, :] = removed_air                
+        
         fName = os.path.join(save_dir, aSlice) 
-        tifffile.imwrite(fName, removed_air)
+        tifffile.imwrite(fName, full_air_rem_imarry)
     except:
         
         fName = os.path.join(save_dir, aSlice)
-        tifffile.imwrite(fName, imarray[start_point+h_offset:end_point, :])
+        tifffile.imwrite(fName, imarray)
 
     
     

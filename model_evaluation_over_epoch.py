@@ -64,3 +64,18 @@ for aModel in all_trained_model:
     # plt.show()
 
 all_gen_images[0].save('air4_gen_real_slice_5554.gif', save_all=True, append_images=all_gen_images[1:], duration=500, loop=0)
+
+
+
+
+with_air_path = 'E:\\Data\\air_bubbles\\with_air\\train\\'
+without_air_path = 'E:\\Data\\air_bubbles\\without_air\\train\\'
+all_files = os.listdir(with_air_path)
+num_of_slice = 30
+selected_files = np.random.choice(all_files, num_of_slice)
+selected_img = []
+for afile in selected_files:
+    img = Image.open(os.path.join(without_air_path, afile))
+    selected_img.append(img)
+
+selected_img[0].save('outputs/without_air.gif', save_all=True, append_images=selected_img[1:], duration=500, loop=0)
