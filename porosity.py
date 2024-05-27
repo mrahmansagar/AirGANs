@@ -22,15 +22,15 @@ from proUtils import utils
 
 
 # data dir
-data_dir = "E:\\Data\\air_bubbles\\3d\\extracted_air\\test\\"
+data_dir = "E:\\Data\\air_bubbles\\3d\\with_air\\"
 
 
 # folder where rois are and where to save the results(folders are relative to the data_dir)
-roi_folder = 'roi'
+roi_folder = 'air_removed_test'
 # where all the cubes are
 sample_dir = os.path.join(data_dir, roi_folder)
 
-result_folder = 'porespy'
+result_folder = 'air_removed_test_porosity'
 
 # save dir 
 save_dir = os.path.join(data_dir, result_folder)

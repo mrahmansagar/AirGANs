@@ -23,22 +23,22 @@ from tqdm import tqdm
 
 
 # data dir
-data_dir = "E:\\Data\\air_bubbles\\3d\\extracted_air\\test\\"
+data_dir = "E:\\Data\\air_bubbles\\3d\\with_air\\"
 
 # where all the cubes are
-sample_dir = os.path.join(data_dir, 'roi')
+sample_dir = os.path.join(data_dir, 'test')
+all_cubes = os.listdir(sample_dir)
+
+# save dir 
+save_dir = os.path.join(data_dir, 'air_removed_test')
+if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
 
 # model to be used 
 model = load_model('E:\\projects\\AirGANs\\air3d_202401031030\\src2tar_air3d_after_179999.h5')
 
-# save dir 
-save_dir = os.path.join(data_dir, 'air3d_removed_roi')
-if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
 
-all_cubes = os.listdir(sample_dir)
-
-for cube in all_cubes[0:1]:
+for cube in tqdm(all_cubes):
     cube_path = os.path.join(sample_dir, cube)
     patch = utils.load_roi(cube_path, check_blank=False)
 
@@ -51,7 +51,9 @@ for cube in all_cubes[0:1]:
         air_rem_patch = np.clip(air_rem_patch, -1, 1)
         air_rem_patch = img_as_ubyte(air_rem_patch)
     
-    utils.save_vol_as_slices(air_rem_patch, save_dir)
+    fName = os.path.join(save_dir, cube)
+    utils.save_vol_as_slices(air_rem_patch, fName)
+    
         
         
 
