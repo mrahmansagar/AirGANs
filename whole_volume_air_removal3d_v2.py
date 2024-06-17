@@ -40,6 +40,17 @@ save_dir = os.path.join(data_dir, 'air3d_removed_slices_v2')
 if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
+# new_air = 0.00009706
+# new_paraffin = 0.0004179
+
+# new_diff = new_paraffin - new_air
+
+# old_air = 0.0002605
+# old_paraffin = 0.0009999
+
+# old_diff = old_paraffin - old_air
+
+
 """
 Here a sample slice is selected to find the start and end point. 
 for 3D the slices are not rotated 
@@ -111,12 +122,12 @@ for step, chunk in enumerate(chunk_list(slices, chunk_size=chunk_depth)):
         im = Image.open(os.path.join(slice_dir, fname))
         imarray = np.array(im)
     #     imarray = (imarray - new_air) / new_diff * old_diff + old_air
-        imarray = np.clip(imarray, 0.0005, 0.003)
+        # imarray = np.clip(imarray, 0.0005, 0.003)
         nan_indices = np.isnan(imarray)
         if np.any(nan_indices) and prev_imarray is not None:
             vol_chunk[i, :, :] = prev_imarray
         else:
-            imarray = utils.norm8bit(imarray)
+            # imarray = utils.norm8bit(imarray)
             vol_chunk[i, :, :] = imarray
             prev_imarray = imarray
     
